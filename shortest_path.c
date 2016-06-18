@@ -7,27 +7,6 @@ AUTHOR : ANKAN KUMAR GIRI
 
 Email : agiri000@citymail.cuny.edu / ankangiri@gmail.com
 ---------------------------------------------------------------------------------------------------------
-
-INSTRUCTIONS:
-=============
-
-compiles with command line "gcc shortest_path.c -lX11 -lm -L/usr/X11R6/lib -o shortest_path.out"
-run using "./shortestpath.out inputfilename.extension" as command line argument.
-inputfilename.extension is a file containing triangle shaped obstacles in the following format :
-T (x1,y1) (x2,y2) (x3,y3)
-T (x4,y4) (x5,y5) (x6,y6)
-and so on................
-Each point in a triangle should be within the minimum and maximum range to be displayed full as 
-a triangle.
-Minimum x value : 0
-Minimum y value : 0
-Maximum x value : Your Max Screen Widthness - 300
-Maximum y value : Your Max Screen Height - 200
-User can left mouse click to select the start point and the target point and click the right 
-mouse button to exit.
-Note : No points can be selected inside a triangle or a region bounded by three triangles or 
-outside the bounding rectangular box.
-------------------------------------------------------------------------------------------------------------
 */
 
 #include <X11/Xlib.h>
@@ -77,12 +56,14 @@ struct Triangle
    int point_2_inside_triangle;
    int point_3_inside_triangle;
 } t[100];
+
 struct Pixel
 {
   int name;
   int x;
   int y;
 } pixel[302];
+
 int  pixel_count;
 int  triangle_count;
 int  cost[302][302];
@@ -255,7 +236,7 @@ void dijsktra(int source,int target)
       {
           d = dist[start] + cost[start][i];
           if(d < dist[i] && finished[i]==0)
-           {
+          {
               dist[i] = d;
               prev[i] = start;
           }
@@ -497,126 +478,126 @@ int main(int argc, char **argv)
   }
   
   while(1)
-    { XNextEvent( display_ptr, &report );
-      switch( report.type )
-	{
-	case Expose:
-	        for(i=0;i<triangle_count;i++)
-          {
-            XDrawLine(display_ptr, win, gc_black, t[i].x1, t[i].y1, t[i].x2, t[i].y2);
-            XDrawLine(display_ptr, win, gc_black, t[i].x2, t[i].y2, t[i].x3, t[i].y3);
-            XDrawLine(display_ptr, win, gc_black, t[i].x3, t[i].y3, t[i].x1, t[i].y1);
-          }
-          XDrawRectangle(display_ptr, win, gc_black, x_start, y_start, rec_width, rec_height ); 
-
-          break;
-        case ConfigureNotify:
+  { 
+    XNextEvent( display_ptr, &report );
+    switch( report.type )
+	  {
+	    case Expose:
+	      for(i=0;i<triangle_count;i++)
+        {
+          XDrawLine(display_ptr, win, gc_black, t[i].x1, t[i].y1, t[i].x2, t[i].y2);
+          XDrawLine(display_ptr, win, gc_black, t[i].x2, t[i].y2, t[i].x3, t[i].y3);
+          XDrawLine(display_ptr, win, gc_black, t[i].x3, t[i].y3, t[i].x1, t[i].y1);
+        }
+        XDrawRectangle(display_ptr, win, gc_black, x_start, y_start, rec_width, rec_height ); 
+        break;
+        
+      case ConfigureNotify:
           win_width = report.xconfigure.width;
           win_height = report.xconfigure.height;
           break;
-        case ButtonPress:
-          {  
-            int x, y;
-  	        x = report.xbutton.x;
-            y = report.xbutton.y;
-            if (report.xbutton.button == Button1 )
-	          {
-              outside = 0;
-              if(x <= x_start || y <= y_start || x >= x_end || y >= y_end)
+        
+      case ButtonPress:
+      {  
+        int x, y;
+  	    x = report.xbutton.x;
+        y = report.xbutton.y;
+        if (report.xbutton.button == Button1 )
+	      {
+          outside = 0;
+          if(x <= x_start || y <= y_start || x >= x_end || y >= y_end)
+          {
+            outside = 1;
+          } 
+          for(i=0;i<triangle_count;i++)
+          {
+            if(point_in_triangle(x,y,t[i].x1,t[i].y1,t[i].x2,t[i].y2,t[i].x3,t[i].y3)==1)
+            {
+              outside = 1;
+              break;
+            }
+          }
+          if(outside == 0)
+          {
+            ButtonPressed++;
+            if(ButtonPressed == 1)
+            { 
+              temp_x = x;
+              temp_y = y;
+              pixel_count = 0;
+              XFillArc( display_ptr, win, gc_red, x - win_height/150, y - win_height/150, win_height/100, win_height/100, 0, 360*64);
+              pixel[pixel_count].name = pixel_count;
+              pixel[pixel_count].x = x; 
+              pixel[pixel_count].y = y;
+              pixel_count++;
+            }
+            else if(ButtonPressed == 2)
+            { 
+              if(temp_x == x && temp_y == y)
               {
-                outside = 1;
-              } 
+                ButtonPressed = 1;
+                break;
+              }
+              XFillArc( display_ptr, win, gc_red, x - win_height/150, y - win_height/150, win_height/100, win_height/100, 0, 360*64);
               for(i=0;i<triangle_count;i++)
               {
-                if(point_in_triangle(x,y,t[i].x1,t[i].y1,t[i].x2,t[i].y2,t[i].x3,t[i].y3)==1)
+                if(t[i].point_1_inside_triangle != 1)
                 {
-                  outside = 1;
-                  break;
-                }
-              }
-              if(outside == 0)
-              {
-                ButtonPressed++;
-                if(ButtonPressed == 1)
-                { 
-                  temp_x = x;
-                  temp_y = y;
-                  pixel_count = 0;
-                  XFillArc( display_ptr, win, gc_red, x - win_height/150, y - win_height/150, win_height/100, win_height/100, 0, 360*64);
                   pixel[pixel_count].name = pixel_count;
-                  pixel[pixel_count].x = x; 
-                  pixel[pixel_count].y = y;
+                  pixel[pixel_count].x = t[i].x1; 
+                  pixel[pixel_count].y = t[i].y1;
                   pixel_count++;
                 }
-                else if(ButtonPressed == 2)
-                { 
-                  if(temp_x == x && temp_y == y)
-                  {
-                    ButtonPressed = 1;
-                    break;
-                  }
-                  XFillArc( display_ptr, win, gc_red, x - win_height/150, y - win_height/150, win_height/100, win_height/100, 0, 360*64);
-                  for(i=0;i<triangle_count;i++)
-                  {
-                      if(t[i].point_1_inside_triangle != 1)
-                      {
-                        pixel[pixel_count].name = pixel_count;
-                        pixel[pixel_count].x = t[i].x1; 
-                        pixel[pixel_count].y = t[i].y1;
-                        pixel_count++;
-                      }
-                      if(t[i].point_2_inside_triangle != 1)
-                      {
-                        pixel[pixel_count].name = pixel_count;
-                        pixel[pixel_count].x = t[i].x2; 
-                        pixel[pixel_count].y = t[i].y2;
-                        pixel_count++;
-                      }
-                      if(t[i].point_3_inside_triangle != 1)
-                      {
-                        pixel[pixel_count].name = pixel_count;
-                        pixel[pixel_count].x = t[i].x3; 
-                        pixel[pixel_count].y = t[i].y3;
-                        pixel_count++;
-                      }
-                  }
-                  pixel[pixel_count].name = pixel_count;
-                  pixel[pixel_count].x = x; 
-                  pixel[pixel_count].y = y;
-                  pixel_count++;
-                  for(i=0;i<pixel_count-1;i++)
-                  {         
-                    for(j=i+1;j<pixel_count;j++)
-                    {
-                      if(can_see(pixel[i].x,pixel[i].y,pixel[j].x,pixel[j].y)==1)
-                      {
-                        cost[pixel[i].name][pixel[j].name] = cost[pixel[j].name][pixel[i].name] = eculidian_dist(pixel[i].x,pixel[i].y,pixel[j].x,pixel[j].y);
-                      }
-                    }
-                  }
-                  dijsktra(pixel[0].name, pixel[pixel_count-1].name);
-                }
-                else
+                if(t[i].point_2_inside_triangle != 1)
                 {
-                  clear_cost();
-                  expose();
-                  ButtonPressed = 0;          
+                  pixel[pixel_count].name = pixel_count;
+                  pixel[pixel_count].x = t[i].x2; 
+                  pixel[pixel_count].y = t[i].y2;
+                  pixel_count++;
+                }
+                if(t[i].point_3_inside_triangle != 1)
+                {
+                  pixel[pixel_count].name = pixel_count;
+                  pixel[pixel_count].x = t[i].x3; 
+                  pixel[pixel_count].y = t[i].y3;
+                  pixel_count++;
                 }
               }
+              pixel[pixel_count].name = pixel_count;
+              pixel[pixel_count].x = x; 
+              pixel[pixel_count].y = y;
+              pixel_count++;
+              for(i=0;i<pixel_count-1;i++)
+              {         
+                for(j=i+1;j<pixel_count;j++)
+                {
+                  if(can_see(pixel[i].x,pixel[i].y,pixel[j].x,pixel[j].y)==1)
+                  {
+                    cost[pixel[i].name][pixel[j].name] = cost[pixel[j].name][pixel[i].name] = eculidian_dist(pixel[i].x,pixel[i].y,pixel[j].x,pixel[j].y);
+                  }
+                }
+              }
+              dijsktra(pixel[0].name, pixel[pixel_count-1].name);
             }
             else
             {
-              XFlush(display_ptr);
-              XCloseDisplay(display_ptr);
-              exit(0);
+              clear_cost();
+              expose();
+              ButtonPressed = 0;          
             }
-
           }
-          break;
-        default:
-          break;
-	    }
-
+        }
+        else
+        {
+          XFlush(display_ptr);
+          XCloseDisplay(display_ptr);
+          exit(0);
+        }
+      }
+      break;
+      default:
+        break;
+    }
   }
   exit(0);
 }
